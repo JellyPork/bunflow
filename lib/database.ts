@@ -1,13 +1,12 @@
-import * as SQLite from "expo-sqlite"
+import * as SQLite from "expo-sqlite";
 
 let db: SQLite.SQLiteDatabase
 
 export async function initializeDatabase() {
-  db = await SQLite.openDatabaseAsync("taskhabit.db")
-
+  await SQLite.deleteDatabaseAsync("taskhabit.db");
+  db = await SQLite.openDatabaseAsync("taskhabit.db");
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
-    
     CREATE TABLE IF NOT EXISTS tasks (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -53,7 +52,7 @@ export async function initializeDatabase() {
       color TEXT DEFAULT '#007AFF',
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
-  `)
+  `);
 }
 
 export function getDatabase() {

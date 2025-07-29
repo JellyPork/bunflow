@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons"
 import { format } from "date-fns"
 import { StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native"
+import { useThemeStore } from "../app/_layout"
 import type { Note } from "../lib/stores/noteStore"
 
 interface NoteItemProps {
@@ -9,7 +10,8 @@ interface NoteItemProps {
 
 export function NoteItem({ note }: NoteItemProps) {
   const colorScheme = useColorScheme()
-  const isDark = colorScheme === "dark"
+  const { theme } = useThemeStore()
+  const isDark = theme === 'dark' || (theme === 'system' && colorScheme === 'dark')
 
   const styles = createStyles(isDark)
 

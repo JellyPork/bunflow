@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons"
 import { StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native"
+import { useThemeStore } from "../app/_layout"
 import { type Habit, useHabitStore } from "../lib/stores/habitStore"
 
 interface HabitItemProps {
@@ -9,7 +10,8 @@ interface HabitItemProps {
 
 export function HabitItem({ habit, showStreak = false }: HabitItemProps) {
   const colorScheme = useColorScheme()
-  const isDark = colorScheme === "dark"
+  const { theme } = useThemeStore()
+  const isDark = theme === 'dark' || (theme === 'system' && colorScheme === 'dark')
   const { completeHabit } = useHabitStore()
 
   const getStreakColor = (streak: number) => {

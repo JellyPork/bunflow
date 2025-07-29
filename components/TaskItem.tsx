@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { format, isPast, isToday, isTomorrow } from "date-fns"
 import { useEffect } from "react"
 import { Pressable, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native"
+import { useThemeStore } from "../app/_layout"
 import { useTagStore } from "../lib/stores/tagStore"
 import { type Task, useTaskStore } from "../lib/stores/taskStore"
 
@@ -36,7 +37,8 @@ const TagsView: React.FC<TagsViewProps> = ({ tags, styles }) => (
 
 export function TaskItem({ task }: TaskItemProps) {
   const colorScheme = useColorScheme()
-  const isDark = colorScheme === "dark"
+  const { theme } = useThemeStore()
+  const isDark = theme === 'dark' || (theme === 'system' && colorScheme === 'dark')
   const { toggleTask } = useTaskStore()
   const { tags: allTags, loadTags } = useTagStore() // get all tags
   
