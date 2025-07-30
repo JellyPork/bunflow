@@ -40,6 +40,28 @@ export default function SettingsScreen() {
     </TouchableOpacity>
   )
 
+  // ...existing code...
+
+  // Test notification handler
+  const handleTestNotification = async () => {
+    const { SchedulableTriggerInputTypes, scheduleNotificationAsync } = await import('expo-notifications');
+    console.log("Scheduling test notification...");
+    await scheduleNotificationAsync({
+      content: {
+        title: 'Test Notification',
+        body: 'This is a test local notification.',
+        data: { type: 'test' },
+        // channelId: 'default', // Removed: not supported in NotificationContentInput
+      },
+      trigger: {
+        type: SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 10,
+        repeats: false,
+      },
+    });
+    console.log("Test notification scheduled.");
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -101,6 +123,8 @@ export default function SettingsScreen() {
           <SettingItem icon="help-circle" title="Help & Support" subtitle="Get help using the app" onPress={() => {}} />
 
           <SettingItem icon="star" title="Rate App" subtitle="Leave a review" onPress={() => {}} />
+
+          <SettingItem icon="notifications-outline" title="Test Notification" subtitle="Send a test notification" onPress={handleTestNotification} />
         </View>
       </ScrollView>
     </View>

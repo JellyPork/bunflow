@@ -37,3 +37,30 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# Android
+android/build/
+android/app/build/
+android/.gradle/
+android/.idea/
+android/local.properties
+*.apk
+*.ap_
+*.dex
+*.class
+*.log
+
+# iOS
+ios/build/
+ios/Pods/
+ios/Podfile.lock
+ios/*.xcworkspace
+ios/*.xcuserstate
+ios/*.xcuserdata
+ios/*.pbxuser
+ios/*.mode1v3
+ios/*.mode2v3
+ios/.DS_Store
+
+# Expo/EAS
+.expo-shared/

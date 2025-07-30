@@ -2,6 +2,7 @@
 
 import { Ionicons } from "@expo/vector-icons"
 import DateTimePicker from '@react-native-community/datetimepicker'
+import { Picker } from '@react-native-picker/picker'
 import { useTheme } from "@react-navigation/native"
 import { useState } from "react"
 import {
@@ -14,10 +15,12 @@ import {
   TouchableOpacity,
   View
 } from "react-native"
+import { RECURRENCE_OPTIONS, REMINDER_PRESETS, WEEKDAYS } from "../constants/TaskOptions"
 import { useHabitStore } from "../lib/stores/habitStore"
 import { useNoteStore } from "../lib/stores/noteStore"
 import { useTagStore } from "../lib/stores/tagStore"
 import { useTaskStore } from "../lib/stores/taskStore"
+  const [reminders, setReminders] = useState<any[]>([]);
 
 interface AddModalProps {
   visible: boolean
@@ -26,32 +29,35 @@ interface AddModalProps {
 }
 
 export function AddModal({ visible, onClose, defaultType = "task" }: AddModalProps) {
-  const { colors, dark: isDark } = useTheme()
-  const [selectedType, setSelectedType] = useState<"task" | "habit" | "note">(defaultType)
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium")
-  const [frequency, setFrequency] = useState("daily")
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [deadline, setDeadline] = useState<Date | null>(null)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [showTimePicker, setShowTimePicker] = useState(false)
+  const { colors, dark: isDark } = useTheme();
+  const [selectedType, setSelectedType] = useState<"task" | "habit" | "note">(defaultType);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [frequency, setFrequency] = useState("daily");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [deadline, setDeadline] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [tagColor, setTagColor] = useState<string>("#007AFF");
   const [editingTag, setEditingTag] = useState<{ id: string, name: string, color: string } | null>(null);
   const [editTagName, setEditTagName] = useState("");
   const [editTagColor, setEditTagColor] = useState("#007AFF");
-  const { tags, loadTags, addTag, updateTag } = useTagStore()
-  
+  const { tags, loadTags, addTag, updateTag } = useTagStore();
+  const [recurrence, setRecurrence] = useState<any>(RECURRENCE_OPTIONS[0].value);
+  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]); // Always initialize as array
 
-  const { addTask } = useTaskStore()
-  const { addHabit } = useHabitStore()
-  const { addNote } = useNoteStore()
+  const { addTask } = useTaskStore();
+  const { addHabit } = useHabitStore();
+  const { addNote } = useNoteStore();
 
   // Load tags when modal opens
+  // Move hook to top level, do not call conditionally
   useState(() => {
-    if (visible) loadTags()
-  })
+    if (visible) loadTags();
+  });
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -61,7 +67,11 @@ export function AddModal({ visible, onClose, defaultType = "task" }: AddModalPro
 
     try {
       switch (selectedType) {
-        case "task":
+        case "task": {
+          let recurrencePattern = recurrence;
+          if (recurrence && typeof recurrence === 'object' && 'frequency' in recurrence && recurrence.frequency === "weekly") {
+            recurrencePattern = { ...recurrence, weekdays: selectedWeekdays };
+          }
           await addTask({
             title: title.trim(),
             description: description.trim() || undefined,
@@ -69,8 +79,11 @@ export function AddModal({ visible, onClose, defaultType = "task" }: AddModalPro
             completed: false,
             tags: selectedTags,
             due_date: deadline ? deadline.toISOString() : undefined,
+            recurrence_pattern: recurrencePattern ? JSON.stringify(recurrencePattern) : undefined,
+            reminders: Array.isArray(reminders) && reminders.length > 0 ? reminders : [],
           })
-          break
+          break;
+        }
         case "habit":
           await addHabit({
             name: title.trim(),
@@ -94,6 +107,7 @@ export function AddModal({ visible, onClose, defaultType = "task" }: AddModalPro
       setFrequency("daily")
       setSelectedTags([])
       setDeadline(null)
+      setReminders([])
       onClose()
     } catch (error) {
       console.error("Failed to save:", error)
@@ -329,6 +343,101 @@ export function AddModal({ visible, onClose, defaultType = "task" }: AddModalPro
                   />
                 )}
               </View>
+
+              {/* Recurrence Selector */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Recurrence</Text>
+                <Picker
+                  selectedValue={recurrence}
+                  onValueChange={(val) => {
+                    setRecurrence(val);
+                    if (!val || typeof val !== 'object' || val.frequency !== "weekly") setSelectedWeekdays([]);
+                  }}
+                  style={{ backgroundColor: isDark ? '#222' : '#fff', color: isDark ? '#fff' : '#222' }}
+                >
+                  {RECURRENCE_OPTIONS.map(opt => (
+                    <Picker.Item key={opt.label} label={opt.label} value={opt.value} />
+                  ))}
+                </Picker>
+                {/* Weekday selector for weekly/biweekly */}
+                {recurrence && typeof recurrence === 'object' && recurrence.frequency === "weekly" && (
+                  <View style={{ flexDirection: 'row', marginTop: 12, gap: 4, flexWrap: 'wrap' }}>
+                    {WEEKDAYS.map(day => (
+                      <TouchableOpacity
+                        key={day.value}
+                        style={{
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 6,
+                          backgroundColor: selectedWeekdays.includes(day.value) ? '#007AFF' : (isDark ? '#222' : '#eee'),
+                          borderWidth: 1,
+                          borderColor: selectedWeekdays.includes(day.value) ? '#007AFF' : (isDark ? '#444' : '#ccc'),
+                          marginRight: 4,
+                          marginBottom: 4,
+                        }}
+                        onPress={() => {
+                          setSelectedWeekdays((prev) =>
+                            prev.includes(day.value)
+                              ? prev.filter((v) => v !== day.value)
+                              : [...prev, day.value]
+                          );
+                        }}
+                      >
+                        <Text style={{ color: selectedWeekdays.includes(day.value) ? '#fff' : (isDark ? '#fff' : '#222'), fontWeight: '500' }}>{day.label.charAt(0)}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Reminders Selector (only show if deadline is selected) */}
+              {deadline && (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Reminders</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {REMINDER_PRESETS.map((preset) => (
+                      <TouchableOpacity
+                        key={preset.label}
+                        style={{
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          borderRadius: 6,
+                          backgroundColor: reminders.some(r => JSON.stringify(r) === JSON.stringify(preset.value)) ? '#007AFF' : (isDark ? '#222' : '#eee'),
+                          borderWidth: 1,
+                          borderColor: reminders.some(r => JSON.stringify(r) === JSON.stringify(preset.value)) ? '#007AFF' : (isDark ? '#444' : '#ccc'),
+                          marginRight: 4,
+                          marginBottom: 4,
+                        }}
+                        onPress={() => {
+                          if (preset.value === null) {
+                            setReminders([]);
+                          } else {
+                            setReminders((prev) => {
+                              const exists = prev.some(r => JSON.stringify(r) === JSON.stringify(preset.value));
+                              if (exists) {
+                                return prev.filter(r => JSON.stringify(r) !== JSON.stringify(preset.value));
+                              } else {
+                                // Remove "None" if present
+                                return [...prev.filter(r => r !== null), preset.value];
+                              }
+                            });
+                          }
+                        }}
+                      >
+                        <Text style={{ color: reminders.some(r => JSON.stringify(r) === JSON.stringify(preset.value)) ? '#fff' : (isDark ? '#fff' : '#222'), fontWeight: '500' }}>{preset.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  {Array.isArray(reminders) && reminders.length > 0 && (
+                    <Text style={{ marginTop: 8, color: isDark ? '#fff' : '#222', fontSize: 13 }}>
+                      Selected: {reminders.map(r => {
+                        const preset = REMINDER_PRESETS.find(p => JSON.stringify(p.value) === JSON.stringify(r));
+                        return preset ? preset.label : '';
+                      }).filter(Boolean).join(', ')}
+                    </Text>
+                  )}
+                </View>
+              )}
             </>
           )}
 

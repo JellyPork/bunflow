@@ -8,6 +8,7 @@ import { type Task, useTaskStore } from "../lib/stores/taskStore"
 
 interface TaskItemProps {
   task: Task
+  style?: any
 }
 
 interface TagProps {
@@ -36,6 +37,22 @@ const TagsView: React.FC<TagsViewProps> = ({ tags, styles }) => (
 )
 
 export function TaskItem({ task }: TaskItemProps) {
+  // Helper to format recurrence info
+  const formatRecurrence = (rec: any) => {
+    if (!rec) return null;
+    if (rec.frequency === 'daily') return 'Repeats: Every Day';
+    if (rec.frequency === 'weekly') {
+      let days = '';
+      if (rec.weekdays && Array.isArray(rec.weekdays)) {
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        days = rec.weekdays.map((d: number) => dayNames[d]).join(', ');
+      }
+      return `Repeats: Every Week${days ? ' (' + days + ')' : ''}`;
+    }
+    if (rec.frequency === 'monthly') return 'Repeats: Every Month';
+    if (rec.frequency === 'yearly') return 'Repeats: Every Year';
+    return null;
+  };
   const colorScheme = useColorScheme()
   const { theme } = useThemeStore()
   const isDark = theme === 'dark' || (theme === 'system' && colorScheme === 'dark')
@@ -80,7 +97,7 @@ export function TaskItem({ task }: TaskItemProps) {
   return (
     <>
       <Pressable
-        style={styles.container}
+        style={[styles.container, arguments[0]?.style]}
         onPress={() => toggleTask(task.id)}
         android_ripple={{ color: '#ddd' }}
       >
@@ -94,7 +111,14 @@ export function TaskItem({ task }: TaskItemProps) {
 
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={[styles.title, task.completed && styles.completedTitle]}>{task.title}</Text>
+            <View style={{ flexDirection: 'column', flex: 1 }}>
+              <Text style={[styles.title, task.completed && styles.completedTitle]}>{task.title}</Text>
+              {task.recurrence_pattern && (
+                <Text style={{ fontSize: 12, color: isDark ? '#8E8E93' : '#6D6D70', marginTop: 2 }}>
+                  {formatRecurrence(task.recurrence_pattern)}
+                </Text>
+              )}
+            </View>
             <View style={[styles.priorityIndicator, { backgroundColor: getPriorityColor(task.priority) }]} />
             {taskTags.length > 0 && (
               <TagsView tags={taskTags} styles={styles} />

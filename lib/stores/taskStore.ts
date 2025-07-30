@@ -1,5 +1,6 @@
-import { create } from "zustand"
-import { getDatabase } from "../database"
+import { create } from "zustand";
+import { scheduleReminderNotification } from "../../app/_layout";
+import { getDatabase } from "../database";
 
 export interface Task {
   id: string
@@ -36,6 +37,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       completed: Boolean(row.completed),
       reminders: row.reminders ? JSON.parse(row.reminders) : [],
       tags: row.tags ? JSON.parse(row.tags) : [],
+      recurrence_pattern: row.recurrence_pattern ? JSON.parse(row.recurrence_pattern) : undefined,
     }))
     set({ tasks })
   },
@@ -62,9 +64,36 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         now,
         now,
       ],
-    )
+    );
 
-    get().loadTasks()
+    // Schedule local notifications for reminders
+    if (taskData.due_date && Array.isArray(taskData.reminders)) {
+      const dueDate = new Date(taskData.due_date);
+      for (const reminderRaw of taskData.reminders) {
+        if (!reminderRaw) continue;
+        let reminder: any = reminderRaw;
+        if (typeof reminderRaw === 'string') {
+          try {
+            reminder = JSON.parse(reminderRaw);
+          } catch {}
+        }
+        if (!reminder || typeof reminder !== 'object') continue;
+        // Calculate trigger time
+        let triggerDate = dueDate;
+        if (reminder.type === "before_due" && reminder.value && reminder.unit) {
+          const unitMs = reminder.unit === "minutes" ? 60000 : reminder.unit === "hours" ? 3600000 : reminder.unit === "days" ? 86400000 : 0;
+          triggerDate = new Date(dueDate.getTime() - reminder.value * unitMs);
+        } else if (reminder.type === "before_start" && reminder.value === 0) {
+          triggerDate = dueDate;
+        }
+        if (triggerDate > new Date()) {
+          console.log(`Scheduling reminder for task "${taskData.title}" at ${triggerDate}`);
+          await scheduleReminderNotification(taskData.title, triggerDate);
+        }
+      }
+    }
+
+    get().loadTasks();
   },
 
   updateTask: async (id, updates) => {

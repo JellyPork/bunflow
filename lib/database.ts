@@ -3,8 +3,10 @@ import * as SQLite from "expo-sqlite";
 let db: SQLite.SQLiteDatabase
 
 export async function initializeDatabase() {
-  await SQLite.deleteDatabaseAsync("taskhabit.db");
-  db = await SQLite.openDatabaseAsync("taskhabit.db");
+  console.log("Initializing database...");
+
+  // await SQLite.deleteDatabaseAsync("bunflow.db");
+  db = await SQLite.openDatabaseAsync("bunflow.db");
   await db.execAsync(`
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS tasks (
@@ -53,8 +55,14 @@ export async function initializeDatabase() {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
+  console.log("Database setup complete.");
+
 }
 
 export function getDatabase() {
-  return db
+  if (!db) {
+    // Use openDatabaseAsync for consistency with async initialization
+    throw new Error("Database not initialized. Call initializeDatabase() first.");
+  }
+  return db;
 }

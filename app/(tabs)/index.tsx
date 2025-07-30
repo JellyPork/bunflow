@@ -22,20 +22,23 @@ export default function TasksScreen() {
   }, [])
 
   const filteredTasks = tasks.filter((task) => {
-    const today = new Date()
-    const taskDate = task.due_date ? new Date(task.due_date) : null
-
+    const today = new Date();
+    const taskDate = task.due_date ? new Date(task.due_date) : null;
     switch (filter) {
       case "today":
-        return taskDate && taskDate.toDateString() === today.toDateString()
+        return taskDate && taskDate.toDateString() === today.toDateString();
       case "upcoming":
-        return taskDate && taskDate > today && !task.completed
+        return taskDate && taskDate > today && !task.completed;
       case "completed":
-        return task.completed
+        return task.completed;
       default:
-        return true
+        return true;
     }
-  })
+  });
+
+  // Split into incomplete and completed
+  const incompleteTasks = filteredTasks.filter((task) => !task.completed);
+  const completedTasks = filteredTasks.filter((task) => task.completed);
 
   const styles = createStyles(colors, dark)
 
@@ -68,25 +71,60 @@ export default function TasksScreen() {
           ))}
         </View>
 
-        <FlatList
-          data={filteredTasks}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <TaskItem task={item} />}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="checkbox-outline" size={64} color={dark ? "#48484A" : "#C7C7CC"} />
-              <Text style={styles.emptyText}>No tasks found</Text>
-              <Text style={styles.emptySubtext}>Tap the + button to create your first task</Text>
-            </View>
-          }
-        />
+        {filter === "completed" ? (
+          <FlatList
+            data={completedTasks}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <TaskItem task={item} style={{ opacity: 0.5 }} />}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="checkbox-outline" size={64} color={dark ? "#48484A" : "#C7C7CC"} />
+                <Text style={styles.emptyText}>No completed tasks</Text>
+                <Text style={styles.emptySubtext}>Complete a task to see it here</Text>
+              </View>
+            }
+          />
+        ) : (
+          <>
+            <FlatList
+              data={incompleteTasks}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <TaskItem task={item} />}
+              contentContainerStyle={styles.list}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="checkbox-outline" size={64} color={dark ? "#48484A" : "#C7C7CC"} />
+                  <Text style={styles.emptyText}>No tasks found</Text>
+                  <Text style={styles.emptySubtext}>Tap the + button to create your first task</Text>
+                </View>
+              }
+            />
+            {completedTasks.length > 0 && (
+              <View style={styles.completedDividerContainer}>
+                <View style={styles.completedDivider} />
+                <Text style={styles.completedDividerText}>Completed Tasks</Text>
+                <View style={styles.completedDivider} />
+              </View>
+            )}
+            {completedTasks.length > 0 && (
+              <FlatList
+                data={completedTasks}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => <TaskItem task={item} style={{ opacity: 0.5 }} />}
+                contentContainerStyle={styles.list}
+                showsVerticalScrollIndicator={false}
+              />
+            )}
+          </>
+        )}
       </View>
       <AddModal visible={showAddModal} onClose={() => setShowAddModal(false)} defaultType="task" />
       <FilterModal visible={showFilterModal} onClose={() => setShowFilterModal(false)} onApplyFilter={() => {}} />
     </>
-  )
+  );
 }
 
 const createStyles = (colors: any, dark: boolean) =>
@@ -172,4 +210,21 @@ const createStyles = (colors: any, dark: boolean) =>
       marginTop: 8,
       textAlign: "center",
     },
-  })
+    completedDividerContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: 16,
+      paddingHorizontal: 20,
+    },
+    completedDivider: {
+      flex: 1,
+      height: 1,
+      backgroundColor: dark ? '#444' : '#CCC',
+      marginHorizontal: 8,
+    },
+    completedDividerText: {
+      fontSize: 14,
+      color: dark ? '#8E8E93' : '#6D6D70',
+      fontWeight: '600',
+    },
+  });

@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications"
+import { SchedulableTriggerInputTypes } from "expo-notifications"
 
 export async function setupNotifications() {
   const { status: existingStatus } = await Notifications.getPermissionsAsync()
@@ -32,7 +33,10 @@ export async function scheduleTaskReminder(taskId: string, title: string, date: 
       body: title,
       data: { taskId, type: "task" },
     },
-    trigger: { date },
+    trigger: {
+      type: SchedulableTriggerInputTypes.DATE,
+      date: date,
+    },
   })
 }
 
@@ -43,7 +47,11 @@ export async function scheduleHabitReminder(habitId: string, name: string, date:
       body: `Time for: ${name}`,
       data: { habitId, type: "habit" },
     },
-    trigger: date,
+    trigger: {
+      type: SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.max(1, Math.floor((date.getTime() - Date.now()) / 1000)),
+      repeats: false,
+    },
   })
 }
 
