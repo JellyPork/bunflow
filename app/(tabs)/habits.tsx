@@ -45,6 +45,7 @@ export default function HabitsScreen() {
       {viewMode === "list" ? (
         <FlatList
           data={habits}
+          horizontal={false}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <HabitItem habit={item} showStreak />}
           contentContainerStyle={styles.list}

@@ -1,6 +1,7 @@
 "use client"
 
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import React from "react";
 import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, useColorScheme, View } from "react-native";
@@ -9,8 +10,9 @@ import { useThemeStore } from '../_layout';
 export default function SettingsScreen() {
   const colorScheme = useColorScheme()
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true)
+  const [themePref, setThemePref] = React.useState<'system' | 'light' | 'dark'>('system');
   const { theme, setTheme } = useThemeStore();
-  const isDark = theme === 'dark' || (theme === 'system' && colorScheme === 'dark');
+  const isDark = themePref === 'dark' || (themePref === 'system' && colorScheme === 'dark');
   const styles = createStyles(isDark);
 
   const SettingItem = ({
@@ -41,6 +43,18 @@ export default function SettingsScreen() {
   )
 
   // ...existing code...
+  // Load preferences on mount
+  React.useEffect(() => {
+    (async () => {
+      const notifPref = await AsyncStorage.getItem('notificationsEnabled');
+      if (notifPref !== null) setNotificationsEnabled(notifPref === 'true');
+      const themePrefStored = await AsyncStorage.getItem('themePreference');
+      if (themePrefStored === 'light' || themePrefStored === 'dark' || themePrefStored === 'system') {
+        setThemePref(themePrefStored);
+        setTheme(themePrefStored);
+      }
+    })();
+  }, []);
 
   // Test notification handler
   const handleTestNotification = async () => {
@@ -51,7 +65,6 @@ export default function SettingsScreen() {
         title: 'Test Notification',
         body: 'This is a test local notification.',
         data: { type: 'test' },
-        // channelId: 'default', // Removed: not supported in NotificationContentInput
       },
       trigger: {
         type: SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -60,6 +73,19 @@ export default function SettingsScreen() {
       },
     });
     console.log("Test notification scheduled.");
+  };
+
+  // Persist notification preference
+  const handleNotificationToggle = async (value: boolean) => {
+    setNotificationsEnabled(value);
+    await AsyncStorage.setItem('notificationsEnabled', value ? 'true' : 'false');
+  };
+
+  // Persist theme preference
+  const handleThemeChange = async (value: 'system' | 'light' | 'dark') => {
+    setThemePref(value);
+    setTheme(value);
+    await AsyncStorage.setItem('themePreference', value);
   };
 
   return (
@@ -79,7 +105,7 @@ export default function SettingsScreen() {
             rightElement={
               <Switch
                 value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
+                onValueChange={handleNotificationToggle}
                 trackColor={{ false: "#767577", true: "#007AFF" }}
                 thumbColor={notificationsEnabled ? "#FFFFFF" : "#f4f3f4"}
               />
@@ -92,8 +118,8 @@ export default function SettingsScreen() {
             subtitle="Appearance preference"
             rightElement={
               <Picker
-                selectedValue={theme}
-                onValueChange={(value: 'system' | 'light' | 'dark') => setTheme(value)}
+                selectedValue={themePref}
+                onValueChange={handleThemeChange}
                 mode="dropdown"
                 style={{ minWidth: 175, color: isDark ? '#fff' : '#222', fontSize: 14, paddingHorizontal: 4, borderRadius: 4 }}
               >

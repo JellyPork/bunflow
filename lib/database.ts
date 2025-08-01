@@ -18,6 +18,7 @@ export async function initializeDatabase() {
       recurrence_pattern TEXT,
       reminders TEXT,
       completed INTEGER DEFAULT 0,
+      completed_at TEXT DEFAULT NULL,
       tags TEXT,
       parent_task_id TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,

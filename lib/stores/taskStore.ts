@@ -11,6 +11,7 @@ export interface Task {
   recurrence_pattern?: string
   reminders?: string[]
   completed: boolean
+  completed_at?: string
   tags?: string[]
   parent_task_id?: string
   created_at: string
@@ -124,7 +125,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   toggleTask: async (id) => {
     const task = get().tasks.find((t) => t.id === id)
     if (task) {
-      await get().updateTask(id, { completed: !task.completed })
+      // also add completed_at field toggle
+      try {
+        await get().updateTask(id, { completed: !task.completed, completed_at: task.completed ? undefined : new Date().toISOString() });
+      } catch (error) {
+        console.error("Failed to toggle task:", error);
+      }
     }
   },
 }))

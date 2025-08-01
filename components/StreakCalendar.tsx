@@ -1,25 +1,40 @@
 import { ScrollView, StyleSheet, Text, useColorScheme, View } from "react-native"
 import { Calendar } from "react-native-calendars"
 import type { Habit } from "../lib/stores/habitStore"
+import type { Task } from "../lib/stores/taskStore"
 
 interface StreakCalendarProps {
   habits: Habit[]
+  tasks?: Task[]
 }
 
-export function StreakCalendar({ habits }: StreakCalendarProps) {
+export function StreakCalendar({ habits, tasks }: StreakCalendarProps) {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === "dark"
 
-  // Generate marked dates for habits
-  const markedDates = habits.reduce((acc, habit) => {
+  // Generate marked dates for habits and tasks
+  const markedDates: Record<string, any> = {};
+
+  habits.forEach((habit) => {
     if (habit.last_completed_date) {
-      acc[habit.last_completed_date] = {
+      markedDates[habit.last_completed_date] = {
         marked: true,
         dotColor: "#34C759",
-      }
+      };
     }
-    return acc
-  }, {} as any)
+  });
+
+  // Add tasks to markedDates
+  if (tasks) {
+    tasks.forEach((task) => {
+      if (task.due_date) {
+        const dateStr = new Date(task.due_date).toISOString().slice(0, 10);
+        markedDates[dateStr] = markedDates[dateStr] || {};
+        markedDates[dateStr].marked = true;
+        markedDates[dateStr].dotColor = markedDates[dateStr].dotColor || "#007AFF";
+      }
+    });
+  }
 
   const styles = createStyles(isDark)
 
@@ -63,6 +78,24 @@ export function StreakCalendar({ habits }: StreakCalendarProps) {
             </View>
           </View>
         ))}
+        {tasks && tasks.length > 0 && (
+          <>
+            <Text style={[styles.habitsTitle, { marginTop: 24 }]}>Tasks</Text>
+            {tasks.map((task) => (
+              <View key={task.id} style={styles.habitItem}>
+                <View style={styles.habitInfo}>
+                  <Text style={styles.habitName}>{task.title}</Text>
+                  {task.due_date && (
+                    <Text style={styles.habitFrequency}>{new Date(task.due_date).toLocaleDateString()}</Text>
+                  )}
+                </View>
+                <View style={styles.streakInfo}>
+                  <Text style={styles.streakLabel}>{task.completed ? "Completed" : "Pending"}</Text>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
       </View>
     </ScrollView>
   )

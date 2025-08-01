@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { initializeDatabase } from '@/lib/database';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 
@@ -33,8 +34,9 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const { theme } = useThemeStore();
+  const { theme, setTheme } = useThemeStore();
   const [dbReady, setDbReady] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   useEffect(() => {
     
@@ -58,12 +60,31 @@ export default function RootLayout() {
 
     
   }, []);
+  
   useEffect(() => {
-    Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
-      importance: Notifications.AndroidImportance.HIGH,
-    });
-    console.log("Notification channel set up");
+    (async () => {
+      const themePrefStored = await AsyncStorage.getItem('themePreference');
+      if (themePrefStored === 'light' || themePrefStored === 'dark' || themePrefStored === 'system') {
+        setTheme(themePrefStored);
+      }
+      // Optionally load notification preference here as well
+      const notifPref = await AsyncStorage.getItem('notificationsEnabled');
+      if (notifPref !== null) {
+        console.log("Notification preference loaded:", notifPref);
+        setNotificationsEnabled(notifPref === 'true');
+      }
+    })();
+  }, []);
+  useEffect(() => {
+    // Set up notification channel for Android
+    if (notificationsEnabled) {
+      Notifications.setNotificationChannelAsync('default', {
+        name: 'Default',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: 'default',
+      });
+      console.log("Notification channel set up");
+    }
   }, []);
 
   if (!loaded || !dbReady) {

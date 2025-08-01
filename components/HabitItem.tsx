@@ -6,9 +6,10 @@ import { type Habit, useHabitStore } from "../lib/stores/habitStore"
 interface HabitItemProps {
   habit: Habit
   showStreak?: boolean
+  onLongPress?: () => void
 }
 
-export function HabitItem({ habit, showStreak = false }: HabitItemProps) {
+export function HabitItem({ habit, showStreak = false, onLongPress }: HabitItemProps) {
   const colorScheme = useColorScheme()
   const { theme } = useThemeStore()
   const isDark = theme === 'dark' || (theme === 'system' && colorScheme === 'dark')

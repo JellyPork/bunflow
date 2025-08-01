@@ -7,14 +7,16 @@ import { Modal, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 
 interface FilterModalProps {
   visible: boolean
   onClose: () => void
-  onApplyFilter: (filters: any) => void
+  onApplyFilter: (filters: { priority?: string[]; status?: string[] }) => void
+  selectedPriority?: string[]
+  selectedStatus?: string[]
 }
 
-export function FilterModal({ visible, onClose, onApplyFilter }: FilterModalProps) {
+export function FilterModal({ visible, onClose, onApplyFilter, selectedPriority = [], selectedStatus = [] }: FilterModalProps) {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === "dark"
-  const [selectedPriority, setSelectedPriority] = useState<string[]>([])
-  const [selectedStatus, setSelectedStatus] = useState<string[]>([])
+  const [localPriority, setLocalPriority] = useState<string[]>(selectedPriority)
+  const [localStatus, setLocalStatus] = useState<string[]>(selectedStatus)
 
   const styles = createStyles(isDark)
 
@@ -26,7 +28,7 @@ export function FilterModal({ visible, onClose, onApplyFilter }: FilterModalProp
             <Text style={styles.cancelButton}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.title}>Filters</Text>
-          <TouchableOpacity onPress={() => onApplyFilter({})}>
+          <TouchableOpacity onPress={() => onApplyFilter({ priority: localPriority, status: localStatus })}>
             <Text style={styles.applyButton}>Apply</Text>
           </TouchableOpacity>
         </View>
@@ -39,15 +41,15 @@ export function FilterModal({ visible, onClose, onApplyFilter }: FilterModalProp
                 key={priority}
                 style={styles.filterOption}
                 onPress={() => {
-                  if (selectedPriority.includes(priority)) {
-                    setSelectedPriority(selectedPriority.filter((p) => p !== priority))
+                  if (localPriority.includes(priority)) {
+                    setLocalPriority(localPriority.filter((p) => p !== priority))
                   } else {
-                    setSelectedPriority([...selectedPriority, priority])
+                    setLocalPriority([...localPriority, priority])
                   }
                 }}
               >
                 <Ionicons
-                  name={selectedPriority.includes(priority) ? "checkbox" : "square-outline"}
+                  name={localPriority.includes(priority) ? "checkbox" : "square-outline"}
                   size={20}
                   color="#007AFF"
                 />
@@ -58,20 +60,20 @@ export function FilterModal({ visible, onClose, onApplyFilter }: FilterModalProp
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Status</Text>
-            {["completed", "pending", "overdue"].map((status) => (
+            {["completed", "pending", "overdue", "today", "upcoming"].map((status) => (
               <TouchableOpacity
                 key={status}
                 style={styles.filterOption}
                 onPress={() => {
-                  if (selectedStatus.includes(status)) {
-                    setSelectedStatus(selectedStatus.filter((s) => s !== status))
+                  if (localStatus.includes(status)) {
+                    setLocalStatus(localStatus.filter((s) => s !== status))
                   } else {
-                    setSelectedStatus([...selectedStatus, status])
+                    setLocalStatus([...localStatus, status])
                   }
                 }}
               >
                 <Ionicons
-                  name={selectedStatus.includes(status) ? "checkbox" : "square-outline"}
+                  name={localStatus.includes(status) ? "checkbox" : "square-outline"}
                   size={20}
                   color="#007AFF"
                 />

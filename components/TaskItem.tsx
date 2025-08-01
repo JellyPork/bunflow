@@ -9,6 +9,7 @@ import { type Task, useTaskStore } from "../lib/stores/taskStore"
 interface TaskItemProps {
   task: Task
   style?: any
+  onLongPress?: () => void;
 }
 
 interface TagProps {
@@ -36,7 +37,7 @@ const TagsView: React.FC<TagsViewProps> = ({ tags, styles }) => (
   </View>
 )
 
-export function TaskItem({ task }: TaskItemProps) {
+export function TaskItem({ task, onLongPress, style }: TaskItemProps) {
   // Helper to format recurrence info
   const formatRecurrence = (rec: any) => {
     if (!rec) return null;
@@ -97,8 +98,9 @@ export function TaskItem({ task }: TaskItemProps) {
   return (
     <>
       <Pressable
-        style={[styles.container, arguments[0]?.style]}
+        style={[styles.container, style]}
         onPress={() => toggleTask(task.id)}
+        onLongPress={onLongPress}
         android_ripple={{ color: '#ddd' }}
       >
         <TouchableOpacity style={styles.checkbox} onPress={() => toggleTask(task.id)}>
