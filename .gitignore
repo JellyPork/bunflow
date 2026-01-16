@@ -40,4 +40,4 @@ app-example
 
 # Claude
 CLAUDE.md
-.claude/
+.claude/*
